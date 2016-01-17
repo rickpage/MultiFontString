@@ -5,6 +5,7 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 
@@ -23,6 +24,8 @@ public class MultiFontString {
 
     HashMap<Character, Short> mMap;
     private Context mContext;
+    private int mPaintingX;
+    private int mPaintingY;
 
     MultiFontString(String o, String path, Context context){
         mOriginalString = o;
@@ -81,21 +84,66 @@ public class MultiFontString {
      */
     public Bitmap toBitmap(int w, int h) {
         Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(b);
+        Canvas canvas = new Canvas(b);
 
-//
-//        c.drawText("TEST", 10f, 10f,
-//                ((MultiFontChar) mList.get(0)).getPaint());
-//
-//        // TODO: need to use multiple fonts in here:
-//        c.drawColor(Color.YELLOW);
-//        DrawMultilineText.drawMultilineText("Test 1234565677", 0, 0,
-//                (mList.get(0)).getPaint(), c, 72
-//        , new Rect(0,0,w,h) );
+        // loop characters, grouping until a change in font
+        // write the bitmap, and track where we left off
 
-        b = DrawMultilineText.drawMultilineTextToBitmap(mContext,
-                b, mOriginalString);
+        Paint p = null;
+        Paint oldPaint = mList.get(0).getPaint();
+        String substring = "";
+
+        // track position of next character
+        mPaintingX = 0;
+        mPaintingY = 0;
+
+        for ( MultiFontChar c : mList){
+            p = c.getPaint();
+            if ( oldPaint != p){
+                paintSubstring(substring, canvas, p);
+                // store this paint so we change only when font changes
+                oldPaint = p;
+                substring = String.valueOf(c.getChar());
+            } else {
+                substring += c.getChar();
+            }
+        }
+        // paint last substring
+        if ( !substring.isEmpty()){
+            paintSubstring(substring, canvas, p);
+            substring = "";
+        }
+
+
+
+        // We need to find out how many lines, then get font size
+        // based on fitting to lines. one word = one line,
+        // two words, two lines, three or more split at spaces
+        // until substrings are all close to equal (how?)
+
+        // Not quite:
+//        b = DrawMultilineText.drawMultilineTextToBitmap(mContext,
+//                b, mOriginalString);
         return b;
+
+    }
+
+    /**
+     * Uses mPaintingX,Y to paint the substring
+     * onto the canvas
+     * @param substring
+     */
+    private void paintSubstring(String substring, Canvas c, Paint p) {
+        int canvasW = c.getWidth();
+
+        float scale = mContext.getResources().getDisplayMetrics().density;
+        float widthDelta = p.measureText(substring) * scale;
+
+        p.setTextSize(128);
+        mPaintingY = c.getHeight() / 2 ;
+        c.drawText(substring, mPaintingX, mPaintingY, p);
+        mPaintingX += (int) widthDelta;
+
 
     }
 

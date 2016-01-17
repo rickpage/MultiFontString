@@ -23,4 +23,8 @@ public class MultiFontChar {
         else
             return null;
     }
+
+    public char getChar(){
+        return mC;
+    }
 }
