@@ -15,15 +15,8 @@
         android:layout_height="wrap_content"
         android:text="Hello World!" />
 
-    <EditText
-
-        android:layout_below="@+id/status"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/editbox"/>
-
     <ImageView
-        android:layout_below="@+id/editbox"
+        android:layout_below="@+id/status"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:id="@+id/iv1"/>
