@@ -84,8 +84,9 @@ public class MultiFontString {
      */
     public Bitmap toBitmap(int w, int h) {
         Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(b);
 
+        Canvas canvas = new Canvas(b);
+        canvas.drawColor(Color.WHITE);
         // loop characters, grouping until a change in font
         // write the bitmap, and track where we left off
 
@@ -137,10 +138,16 @@ public class MultiFontString {
         int canvasW = c.getWidth();
 
         float scale = mContext.getResources().getDisplayMetrics().density;
-        float widthDelta = p.measureText(substring) * scale;
 
         p.setTextSize(128);
-        mPaintingY = c.getHeight() / 2 ;
+
+        float widthDelta = p.measureText(substring);// * scale;
+
+        if ( mPaintingX > canvasW ){
+            mPaintingY = c.getHeight() / 2 + (int) p.getTextSize() ;
+            mPaintingX = 0;
+        } else
+            mPaintingY = c.getHeight() / 2 ;
         c.drawText(substring, mPaintingX, mPaintingY, p);
         mPaintingX += (int) widthDelta;
 
