@@ -8,16 +8,27 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * Stores information about a technique that
- * will draw multiple font bitmap
+ * Draw a string using multiple fonts from a list.
+ * Each letter is cycled i.e. 11323 will have the second 1 and second 3 drawn in the second font in the list.
+ *
+ * TODO: Measure each word using its own font, then
+     * see if the word length + current word length is too
+     * large to fit. If so, reduce the font of this word and
+     * the previous. This assumes we account for multi line text
+     * by chopping up the
+     * words / characters to fit close to evenly
+     * (i.e. the cat \n a dog \n airplane)
+ *
  * Created by page on 1/16/16.
  */
 public class MultiFontString {
+    private static final String TAG = "MultiFontString";
     final String mOriginalString;
     ArrayList<MultiFontChar> mList;
     ArrayList<FontPaint> mFonts;
@@ -60,19 +71,24 @@ public class MultiFontString {
         for ( char  c  :  list ){
             // increment font number for character
             font_number = mMap.get(c);
-            if ( font_number != null) {
+            // if exists
+            if ( font_number != null){
+                // increment
                 font_number++;
-                if ( font_number >= mFonts.size()){
-                    font_number = 0;
-                }
-            }
-            else {
+                // if too high
+               if ( font_number == mFonts.size()) {
+                   // reset to 0
+                   font_number = 0;
+               }
+            } else {
+                // start at 0 (TODO: SETTING start at random font)
                 font_number = 0;
             }
             mMap.put(c, font_number);
             FontPaint fp = mFonts.get(font_number);
             MultiFontChar mfc = new MultiFontChar(c, fp.getPaint());
             mList.add(mfc);
+            Log.v(TAG, "ADDED " + c + " : " + font_number);
         }
     }
 
@@ -87,21 +103,29 @@ public class MultiFontString {
 
         Canvas canvas = new Canvas(b);
         canvas.drawColor(Color.WHITE);
+
         // loop characters, grouping until a change in font
         // write the bitmap, and track where we left off
 
+
+        MultiFontChar c = mList.get(0);
         Paint p = null;
-        Paint oldPaint = mList.get(0).getPaint();
-        String substring = "";
+        Paint oldPaint = c.getPaint();
+        String substring = String.valueOf(c.getChar());
 
         // track position of next character
         mPaintingX = 0;
-        mPaintingY = 0;
+        mPaintingY = canvas.getHeight() / 2 ;
 
-        for ( MultiFontChar c : mList){
+        // we added first one as oldPaint, so continue at 1
+        for ( int i = 1; i < mList.size(); i++){
+             c = mList.get(i);
+            // get paint
             p = c.getPaint();
+            // if different paint (we use weak ref in MFC), print string
             if ( oldPaint != p){
-                paintSubstring(substring, canvas, p);
+                // Use oldpaint ecause p is now different
+                paintSubstring(substring, canvas, oldPaint);
                 // store this paint so we change only when font changes
                 oldPaint = p;
                 substring = String.valueOf(c.getChar());
@@ -109,6 +133,7 @@ public class MultiFontString {
                 substring += c.getChar();
             }
         }
+
         // paint last substring
         if ( !substring.isEmpty()){
             paintSubstring(substring, canvas, p);
@@ -143,13 +168,16 @@ public class MultiFontString {
 
         float widthDelta = p.measureText(substring);// * scale;
 
+        Log.v(TAG, substring + " is " + widthDelta);
+
         if ( mPaintingX > canvasW ){
-            mPaintingY = c.getHeight() / 2 + (int) p.getTextSize() ;
+            mPaintingY += (int) p.getTextSize() ;
             mPaintingX = 0;
-        } else
-            mPaintingY = c.getHeight() / 2 ;
+            Log.v(TAG, "Next line.");
+        }
         c.drawText(substring, mPaintingX, mPaintingY, p);
         mPaintingX += (int) widthDelta;
+        Log.v(TAG, "x painting is " + mPaintingX);
 
 
     }
