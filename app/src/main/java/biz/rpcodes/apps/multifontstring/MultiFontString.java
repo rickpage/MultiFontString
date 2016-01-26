@@ -109,7 +109,7 @@ public class MultiFontString {
 
 
         MultiFontChar c = mList.get(0);
-        Paint p = null;
+        Paint p = c.getPaint(); // will be overwritten if we loop
         Paint oldPaint = c.getPaint();
         String substring = String.valueOf(c.getChar());
 
