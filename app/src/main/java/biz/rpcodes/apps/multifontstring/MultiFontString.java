@@ -10,7 +10,9 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -44,21 +46,44 @@ public class MultiFontString {
         mContext = context;
 
         AssetManager assets = context.getAssets();
-        loadFontsFromPath(assets, path);
+        try {
+            loadFontsFromPath(assets, path);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
         buildSegments();
     }
 
-    private void loadFontsFromPath(AssetManager assets, String path) {
+    private void loadFontsFromPath(AssetManager assets, String path) throws IOException {
         mFonts = new ArrayList<>();
+        String[] list;
+        try {
+            list =assets.list(path);
+        } catch (IOException e) {
+            throw new IOException("Cannot load " + path);
+        }
 
-        Typeface myTypeface = Typeface.createFromAsset(assets, "fonts/5.ttf");
 
-        Typeface ttt = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
+        Typeface myTypeface = null;
 
-        FontPaint fp = new FontPaint(ttt, Color.BLACK);
-        FontPaint fp2 = new FontPaint(myTypeface, Color.BLUE);
+        FontPaint fp = null;
 
-        mFonts.add(fp); mFonts.add(fp2);
+        int colors[] = { Color.BLUE, Color.RED, Color.GRAY, Color.GREEN, Color.CYAN};
+        for (int i = list.length - 1; i >= 0; i--){
+            String s = list[i];
+            int color = colors[i];
+            myTypeface = Typeface.createFromAsset(assets, path + '/' + s);
+            fp = new FontPaint(myTypeface, color);
+            mFonts.add(fp);
+        }
+//
+//
+//        Typeface ttt = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
+//
+//        FontPaint fp = new FontPaint(ttt, Color.BLACK);
+//        FontPaint fp2 = new FontPaint(myTypeface, Color.BLUE);
+//
+//        mFonts.add(fp); mFonts.add(fp2);
     }
 
     private void buildSegments() {
@@ -162,19 +187,20 @@ public class MultiFontString {
     private void paintSubstring(String substring, Canvas c, Paint p) {
         int canvasW = c.getWidth();
 
-        float scale = mContext.getResources().getDisplayMetrics().density;
+        // float scale = mContext.getResources().getDisplayMetrics().density;
 
         p.setTextSize(128);
 
-        float widthDelta = p.measureText(substring);// * scale;
+        float widthDelta = p.measureText(substring);
 
         Log.v(TAG, substring + " is " + widthDelta);
 
-        if ( mPaintingX > canvasW ){
+        if ( mPaintingX + widthDelta > canvasW ){
             mPaintingY += (int) p.getTextSize() ;
             mPaintingX = 0;
             Log.v(TAG, "Next line.");
         }
+        // TODO: Use measurements to determine when to draw (rows)
         c.drawText(substring, mPaintingX, mPaintingY, p);
         mPaintingX += (int) widthDelta;
         Log.v(TAG, "x painting is " + mPaintingX);
