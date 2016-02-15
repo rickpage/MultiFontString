@@ -85,12 +85,101 @@ public class MultiFontString {
 //
 //        mFonts.add(fp); mFonts.add(fp2);
     }
+    void l(String s){
+        Log.i(TAG, s);
+    }
+    private void storeWordInformation(){
 
+        // length of whole thing
+        int originalStringLength = mOriginalString.length();
+        l("total string length " + originalStringLength);
+
+        if (originalStringLength == 0){
+            throw new IllegalStateException("Cannot parse 0 length original string");
+        }
+        // split into words
+        String strs[] = mOriginalString.split(" ");
+        ArrayList<Integer> lens = new ArrayList<>();
+
+        // how many words is that
+        int mNumberOfWords = strs.length;
+
+        int longestWordLength = 0;
+        int longestWordIndex = 0;
+        for (String s : strs){
+            l("Parsing: "  + s);
+            lens.add(s.length());
+            if ( s.length() > longestWordLength){
+                longestWordLength = s.length();
+                longestWordIndex = lens.size() - 1;
+            }
+        }
+        l("longest word " + strs[longestWordIndex] + " : " + longestWordLength + " chars");
+        int rows = 1;
+
+        // if more than 3 words, break up somewhat evenly
+        if (mNumberOfWords > 3){
+            rows = 3;
+        }
+        // if 3 words, or less, one on each row.
+        else {
+            rows = strs.length;
+        }
+        l("rows " + rows);
+        // TODO: figure out the font size
+        // do this by figuring out how many characters in each row
+        // We would need to know how much width we have here
+        // also, would make sense to have smaller/larger for realism
+
+        int averageCharactersPerRow = Math.max(originalStringLength / rows, 1);
+        l("Avg chars " + averageCharactersPerRow);
+
+        int maxCharPerRow = averageCharactersPerRow;
+        // TODO: evaluate
+        if ( longestWordLength > averageCharactersPerRow){
+            maxCharPerRow = longestWordLength;
+        }
+        l("max chars per row: " + maxCharPerRow);
+        // Did we just decrease our row count?
+        // We will need to check actual rows after
+
+        ArrayList<String> displayRowSubstrings = new ArrayList<>(rows);
+        String temp = strs[0];
+        // add a word to the row until we are over max characters
+        for ( int index = 1; index < mNumberOfWords; index++){
+
+            // +1 below is for the " " we want to add after word(s) in the row
+            if ( (temp.length() + strs[index].length() + 1) >= maxCharPerRow){
+                displayRowSubstrings.add(temp);
+                temp = strs[index];
+                l("Row #" + (displayRowSubstrings.size())
+                        + ": " + displayRowSubstrings.get(displayRowSubstrings.size()-1));
+            } else {
+                temp += " " + strs[index];
+            }
+        }
+        if (temp != ""){
+            displayRowSubstrings.add(temp);
+            l("Row #" + (displayRowSubstrings.size())
+                    + ": " + displayRowSubstrings.get(displayRowSubstrings.size()-1));
+        }
+    }
+
+    /**
+     * Build a list of MFC, changing the font when a letter is used.
+     * Also split up the words "evenly" in the case of three or
+     * more words
+     * TODO: Set a length about equal to the L/3, then fill until should break instead
+     */
     private void buildSegments() {
 
         mMap = new HashMap<>(26);
         mList = new ArrayList<>();
 
+        // First, collect word information
+        storeWordInformation();
+
+        // TODO: do this for each word, keeping map from last word
         char [] list = mOriginalString.toCharArray();
         Short font_number = 0;
         for ( char  c  :  list ){
