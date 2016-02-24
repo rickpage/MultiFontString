@@ -27,7 +27,7 @@ public class MultiFontCharRow {
 
     // TODO: Abstract logging out of the class so non Android can use
     private void l(String s){
-        Log.i("MFC ROW",s );
+        Log.v("MFC ROW",s );
     }
     /**
      * We use a clone of the FontPaints so we can change the

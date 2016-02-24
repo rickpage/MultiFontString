@@ -30,6 +30,7 @@ import java.util.HashMap;
  * Created by page on 1/16/16.
  */
 public class MultiFontString {
+    private static boolean DO_MULTICOLOR = true;
     private static final String TAG = "MultiFontString";
     public static final int MIN_FONT_SIZE = 9;
     final String mOriginalString;
@@ -57,7 +58,7 @@ public class MultiFontString {
     }
 
     private void loadFontsFromPath(AssetManager assets, String path) throws IOException {
-        mFonts = new ArrayList<>();
+
         String[] list;
         try {
             list =assets.list(path);
@@ -65,9 +66,18 @@ public class MultiFontString {
             throw new IOException("Cannot load " + path);
         }
 
+        if (DO_MULTICOLOR && list.length == 5){
+            createMultiColoredFonts(assets, path, list);
+        } else {
+            createAllBlackFonts(assets, path, list);
+        }
 
+
+    }
+
+    private void createMultiColoredFonts(AssetManager assets, String path, String[] list){
+        mFonts = new ArrayList<>();
         Typeface myTypeface = null;
-
         FontPaint fp = null;
 
         int colors[] = { Color.BLUE, Color.RED, Color.GRAY, Color.GREEN, Color.CYAN};
@@ -78,16 +88,21 @@ public class MultiFontString {
             fp = new FontPaint(myTypeface, color);
             mFonts.add(fp);
         }
-//
-//
-//        Typeface ttt = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
-//
-//        FontPaint fp = new FontPaint(ttt, Color.BLACK);
-//        FontPaint fp2 = new FontPaint(myTypeface, Color.BLUE);
-//
-//        mFonts.add(fp); mFonts.add(fp2);
     }
 
+    private void createAllBlackFonts(AssetManager assets, String path, String[] list){
+        mFonts = new ArrayList<>();
+        Typeface myTypeface = null;
+        FontPaint fp = null;
+
+        int color = Color.BLACK;
+        for (int i = list.length - 1; i >= 0; i--){
+            String s = list[i];
+            myTypeface = Typeface.createFromAsset(assets, path + '/' + s);
+            fp = new FontPaint(myTypeface, color);
+            mFonts.add(fp);
+        }
+    }
 
     /** Take word and change into 1 to 3 MFChar Rows
      *
@@ -110,7 +125,7 @@ public class MultiFontString {
         // for each row, make MFC Row
         // Use the map technique
         float rowX = 0;
-        float rowY = rowHeight;
+        float rowY = rowHeight * 0.80f;
         int dRow = 0;
         for ( String s : mDisplayRows){
             dRow++;
@@ -137,7 +152,7 @@ public class MultiFontString {
 
 
     void l(String s){
-        Log.i(TAG, s);
+        Log.v(TAG, s);
     }
     private void storeWordInformation(){
 
@@ -225,150 +240,4 @@ public class MultiFontString {
         mDisplayRows = displayRowSubstrings;
     }
 
-    /**
-     * Build a list of MFC, changing the font when a letter is used.
-     * Also split up the words "evenly" in the case of three or
-     * more words
-     * TODO: Set a length about equal to the L/3, then fill until should break instead
-     */
-    private void buildSegments() {
-
-        mMap = new HashMap<>(26);
-        mList = new ArrayList<>();
-
-        // First, collect word information
-        storeWordInformation();
-
-        // TODO: do this for each word, keeping map from last word
-        char [] list = mOriginalString.toCharArray();
-        Short font_number = 0;
-        for ( char  c  :  list ){
-            // increment font number for character
-            font_number = mMap.get(c);
-            // if exists
-            if ( font_number != null){
-                // increment
-                font_number++;
-                // if too high
-               if ( font_number == mFonts.size()) {
-                   // reset to 0
-                   font_number = 0;
-               }
-            } else {
-                // start at 0 (TODO: SETTING start at random font)
-                font_number = 0;
-            }
-            mMap.put(c, font_number);
-            FontPaint fp = mFonts.get(font_number);
-            MultiFontChar mfc = new MultiFontChar(c, fp.getPaint());
-            mList.add(mfc);
-            Log.v(TAG, "ADDED " + c + " : " + font_number);
-        }
-
-
-    }
-
-    /**
-     * Convert text to a bitmap
-     * @param h
-     * @param w
-     * @return
-     */
-    public Bitmap toBitmap(int w, int h) {
-        Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-
-        Canvas canvas = new Canvas(b);
-        canvas.drawColor(Color.WHITE);
-
-        // loop characters, grouping until a change in font
-        // wgit gui &
-        // e the bitmap, and track where we left off
-
-
-        MultiFontChar c = mList.get(0);
-        Paint p = c.getPaint(); // will be overwritten if we loop
-        Paint oldPaint = c.getPaint();
-        String substring = String.valueOf(c.getChar());
-
-        // track position of next character
-        mPaintingX = 0;
-        mPaintingY = canvas.getHeight() / 2 ;
-
-//        int rowIndex = -1;
-//        // add to this
-//        int rowLength = 0; mDisplayRows.get(rowIndex).length();
-
-        // we added first one as oldPaint, so continue at 1
-        for ( int i = 1; i < mList.size(); i++){
-//            // TODO See if we are at the end of the row
-//            // TODO if so, recalculate font size
-//            if ( i >= rowLength -1 ){
-//                l("row length " + rowLength + " : i " + i);
-//                rowLength += mDisplayRows.get(rowIndex++).length();
-//                l(" new row index " + rowIndex + " , new chars for row check " + rowLength);
-//
-//            }
-             c = mList.get(i);
-            // get paint
-            p = c.getPaint();
-            // if different paint (we use weak ref in MFC), print string
-            if ( oldPaint != p){
-                // Use oldpaint ecause p is now different
-                paintSubstring(substring, canvas, oldPaint);
-                // store this paint so we change only when font changes
-                oldPaint = p;
-                substring = String.valueOf(c.getChar());
-            } else {
-                substring += c.getChar();
-            }
-        }
-
-        // paint last substring
-        if ( !substring.isEmpty()){
-            paintSubstring(substring, canvas, p);
-            substring = "";
-        }
-
-
-
-        // We need to find out how many lines, then get font size
-        // based on fitting to lines. one word = one line,
-        // two words, two lines, three or more split at spaces
-        // until substrings are all close to equal (how?)
-
-        // Not quite:
-//        b = DrawMultilineText.drawMultilineTextToBitmap(mContext,
-//                b, mOriginalString);
-        return b;
-
-    }
-
-    /**
-     * Uses mPaintingX,Y to paint the substring
-     * onto the canvas
-     * @param substring
-     */
-    private void paintSubstring(String substring, Canvas c, Paint p) {
-        int canvasW = c.getWidth();
-
-        // float scale = mContext.getResources().getDisplayMetrics().density;
-
-        p.setTextSize(128);
-
-        float widthDelta = p.measureText(substring);
-
-        Log.v(TAG, substring + " is " + widthDelta);
-
-        if ( mPaintingX + widthDelta > canvasW ){
-            mPaintingY += (int) p.getTextSize() ;
-            mPaintingX = 0;
-            Log.v(TAG, "Next line.");
-        }
-        // TODO: Use measurements to determine when to draw (rows)
-        c.drawText(substring, mPaintingX, mPaintingY, p);
-        mPaintingX += (int) widthDelta;
-        Log.v(TAG, "x painting is " + mPaintingX);
-
-
-    }
 }
