@@ -53,7 +53,7 @@ public class MultiFontString {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        buildSegments();
+        // buildSegments();
     }
 
     private void loadFontsFromPath(AssetManager assets, String path) throws IOException {
@@ -92,7 +92,12 @@ public class MultiFontString {
     /** Take word and change into 1 to 3 MFChar Rows
      *
      */
-    public void rowBasedBitmap(int bmpH, int bmpW){
+    public Bitmap rowBasedBitmap(int bmpW, int bmpH){
+        Bitmap b = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(b);
+        canvas.drawColor(Color.WHITE);
+
         // get width
         int bitmapWidth = bmpW;
 
@@ -104,15 +109,30 @@ public class MultiFontString {
         rowHeight = bmpH / mDisplayRows.size();
         // for each row, make MFC Row
         // Use the map technique
+        float rowX = 0;
+        float rowY = rowHeight;
+        int dRow = 0;
         for ( String s : mDisplayRows){
+            dRow++;
+            l("Row #" + dRow + " == " + s);
             // make a new row
             // copies fonts and chars and
             // represents
             MultiFontCharRow mfcRow = new MultiFontCharRow(s
                     , mFonts, bitmapWidth, rowHeight);
-            // for each char, add to map
-
+            rowX = (int) mfcRow.getXOffset();
+            // loop characters
+            for ( MultiFontChar mfc : mfcRow.getList()){
+                canvas.drawText(String.valueOf(mfc.getChar())
+                        , rowX, rowY, mfc.getPaint());
+                rowX += mfc.getWidth();
+            }
+            l("Row X ends at " + rowX);
+            rowY += rowHeight;
+            rowX = 0;
         }
+
+        return b;
     }
 
 
@@ -129,7 +149,7 @@ public class MultiFontString {
             throw new IllegalStateException("Cannot parse 0 length original string");
         }
         // split into words
-        String strs[] = mOriginalString.split(" ");
+        String strs[] = mOriginalString.split("\\s+");
         ArrayList<Integer> lens = new ArrayList<>();
 
         // how many words is that
@@ -176,11 +196,14 @@ public class MultiFontString {
 
         ArrayList<String> displayRowSubstrings = new ArrayList<>(rows);
         String temp = strs[0];
+
+        int rowCount = 0;
         // add a word to the row until we are over max characters
         for ( int index = 1; index < mNumberOfWords; index++){
 
             // +1 below is for the " " we want to add after word(s) in the row
-            if ( (temp.length() + strs[index].length() + 1) >= maxCharPerRow){
+            if ( displayRowSubstrings.size() != (rows - 1) &&
+                    (temp.length() + strs[index].length() + 1) >= maxCharPerRow){
                 displayRowSubstrings.add(temp);
                 temp = strs[index];
                 l("Row #" + (displayRowSubstrings.size())
@@ -189,7 +212,10 @@ public class MultiFontString {
                 temp += " " + strs[index];
             }
         }
+        // add the last row. if one row, we never added a single row yet
         if (temp != ""){
+//            String s = displayRowSubstrings.remove(rows - 1);
+//            s += temp;
             displayRowSubstrings.add(temp);
             l("Row #" + (displayRowSubstrings.size())
                     + ": " + displayRowSubstrings.get(displayRowSubstrings.size()-1));

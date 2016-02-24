@@ -19,6 +19,11 @@ public class MultiFontCharRow {
     ArrayList<FontPaint> mFonts;
 
     int mRowWidth, mRowHeight, mMeasuredWidth;
+    private float mXOffset = 0f;
+
+    public float getXOffset(){
+        return mXOffset;
+    }
 
     // TODO: Abstract logging out of the class so non Android can use
     private void l(String s){
@@ -32,17 +37,24 @@ public class MultiFontCharRow {
      */
     public MultiFontCharRow(String row
         , ArrayList<FontPaint> fonts
-        , int rowHeight
-        , int rowWidth){
+        , int rowWidth
+        , int rowHeight){
 
+
+        mMap = new HashMap<>(128);
+
+        mList = new ArrayList<MultiFontChar>(row.length());
         mFonts = (ArrayList<FontPaint>) fonts.clone();
 
         mRowHeight = rowHeight;
         mRowWidth = rowWidth;
         mMeasuredWidth = 0;
+
+        createMFCarray(row);
+
     }
 
-    private ArrayList<MultiFontChar> createMFCarray(String substring) {
+    private void createMFCarray(String substring) {
 
         // set all the paints to font size == rowHeight
         int fontSize = mRowHeight;
@@ -77,15 +89,17 @@ public class MultiFontCharRow {
             mMeasuredWidth += mfc.getWidth();
             // TODO if too big already, do something
         }
-        l("Resulting measurement: " + mMeasuredWidth);
+        l("Resulting measurement: " + mMeasuredWidth + " vs " + mRowWidth);
         // Now, if too wide, figure out new font size
         // width(size) == k*size => row width
         // k = measured width(size) / size
         // new size = row width / k
         if ( mMeasuredWidth > mRowWidth){
-            float k = mMeasuredWidth / fontSize;
+            float k = ((float) mMeasuredWidth) / (float) fontSize;
+            l("K is " + k);
             float newSize = mRowWidth / k;
             int iSize = (int) Math.floor(newSize);
+            l("iSize is now " + newSize + " becomes " + iSize);
             boolean tooLarge = true;
             // make sure we didnt get same font
             // if so, reduce and try again
@@ -96,7 +110,7 @@ public class MultiFontCharRow {
                     l("set to " + iSize);
                     if ( iSize == MultiFontString.MIN_FONT_SIZE ){
                         tooLarge = false;
-                        l("Exitting loop: Font Size at minimum of " + MultiFontString.MIN_FONT_SIZE);
+                        l("Exiting loop: Font Size at minimum of " + MultiFontString.MIN_FONT_SIZE);
                         continue;
                     }
                 }
@@ -104,6 +118,7 @@ public class MultiFontCharRow {
                 fontSize = iSize;
                 setFontSize(fontSize);
                 // re-measure
+                mMeasuredWidth = 0;
                 for ( MultiFontChar mfc : mList){
                     mMeasuredWidth += mfc.getWidth();
                 }
@@ -114,7 +129,9 @@ public class MultiFontCharRow {
                 l("Is font still too large?" + String.valueOf(tooLarge));
             }
         }
-        return null;
+        // If there is any x offset, record it
+        mXOffset = (float) (mRowWidth - mMeasuredWidth) / 2.0f;
+
     }
 
 
@@ -129,5 +146,9 @@ public class MultiFontCharRow {
             }
         }
         else throw new IllegalStateException("No fonts for row to process!");
+    }
+
+    public ArrayList<MultiFontChar> getList() {
+        return mList;
     }
 }

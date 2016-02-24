@@ -67,7 +67,8 @@ public class MainActivity extends AppCompatActivity {
         }
         MultiFontString mfs = new MultiFontString(text
                 , "fonts", getApplicationContext());
-        Bitmap b = mfs.toBitmap(1600,1200);
+        // Bitmap b = mfs.toBitmap(1600,1200);
+        Bitmap b = mfs.rowBasedBitmap(1600,1200);
         ImageView i = (ImageView) findViewById(R.id.iv1);
         i.setImageBitmap(b);
     }
