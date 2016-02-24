@@ -27,4 +27,12 @@ public class MultiFontChar {
     public char getChar(){
         return mC;
     }
+
+    /**
+     *
+     * @return float measurment of text using referenced paint
+     */
+    public float getWidth() {
+        return getPaint().measureText(String.valueOf(mC));
+    }
 }

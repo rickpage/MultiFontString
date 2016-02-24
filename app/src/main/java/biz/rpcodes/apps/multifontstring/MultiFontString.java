@@ -31,6 +31,7 @@ import java.util.HashMap;
  */
 public class MultiFontString {
     private static final String TAG = "MultiFontString";
+    public static final int MIN_FONT_SIZE = 9;
     final String mOriginalString;
     ArrayList<MultiFontChar> mList;
     ArrayList<FontPaint> mFonts;
@@ -39,6 +40,7 @@ public class MultiFontString {
     private Context mContext;
     private int mPaintingX;
     private int mPaintingY;
+    private ArrayList<String> mDisplayRows;
 
     MultiFontString(String o, String path, Context context){
         mOriginalString = o;
@@ -85,6 +87,35 @@ public class MultiFontString {
 //
 //        mFonts.add(fp); mFonts.add(fp2);
     }
+
+
+    /** Take word and change into 1 to 3 MFChar Rows
+     *
+     */
+    public void rowBasedBitmap(int bmpH, int bmpW){
+        // get width
+        int bitmapWidth = bmpW;
+
+        // get rows and calc row size
+        int rowHeight = 0;
+        // first get row info
+        storeWordInformation();
+        // then calc
+        rowHeight = bmpH / mDisplayRows.size();
+        // for each row, make MFC Row
+        // Use the map technique
+        for ( String s : mDisplayRows){
+            // make a new row
+            // copies fonts and chars and
+            // represents
+            MultiFontCharRow mfcRow = new MultiFontCharRow(s
+                    , mFonts, bitmapWidth, rowHeight);
+            // for each char, add to map
+
+        }
+    }
+
+
     void l(String s){
         Log.i(TAG, s);
     }
@@ -163,6 +194,9 @@ public class MultiFontString {
             l("Row #" + (displayRowSubstrings.size())
                     + ": " + displayRowSubstrings.get(displayRowSubstrings.size()-1));
         }
+
+        // populate members
+        mDisplayRows = displayRowSubstrings;
     }
 
     /**
@@ -204,6 +238,8 @@ public class MultiFontString {
             mList.add(mfc);
             Log.v(TAG, "ADDED " + c + " : " + font_number);
         }
+
+
     }
 
     /**
@@ -219,7 +255,8 @@ public class MultiFontString {
         canvas.drawColor(Color.WHITE);
 
         // loop characters, grouping until a change in font
-        // write the bitmap, and track where we left off
+        // wgit gui &
+        // e the bitmap, and track where we left off
 
 
         MultiFontChar c = mList.get(0);
@@ -231,8 +268,20 @@ public class MultiFontString {
         mPaintingX = 0;
         mPaintingY = canvas.getHeight() / 2 ;
 
+//        int rowIndex = -1;
+//        // add to this
+//        int rowLength = 0; mDisplayRows.get(rowIndex).length();
+
         // we added first one as oldPaint, so continue at 1
         for ( int i = 1; i < mList.size(); i++){
+//            // TODO See if we are at the end of the row
+//            // TODO if so, recalculate font size
+//            if ( i >= rowLength -1 ){
+//                l("row length " + rowLength + " : i " + i);
+//                rowLength += mDisplayRows.get(rowIndex++).length();
+//                l(" new row index " + rowIndex + " , new chars for row check " + rowLength);
+//
+//            }
              c = mList.get(i);
             // get paint
             p = c.getPaint();
@@ -295,13 +344,5 @@ public class MultiFontString {
         Log.v(TAG, "x painting is " + mPaintingX);
 
 
-    }
-
-    /**
-     * Should print 1 2 1 2 1 2 for "ssssss" and font ring of only 2
-     */
-    public void showMeTheFontIndexes(){
-        MultiFontChar mfc;
-        String s = "";
     }
 }
