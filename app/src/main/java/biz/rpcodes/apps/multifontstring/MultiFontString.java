@@ -30,7 +30,7 @@ import java.util.HashMap;
  * Created by page on 1/16/16.
  */
 public class MultiFontString {
-    private static boolean DO_MULTICOLOR = true;
+    private static boolean DO_MULTICOLOR = false;
     private static final String TAG = "MultiFontString";
     public static final int MIN_FONT_SIZE = 9;
     final String mOriginalString;
@@ -38,6 +38,7 @@ public class MultiFontString {
     ArrayList<FontPaint> mFonts;
 
     HashMap<Character, Short> mMap;
+
     private Context mContext;
     private int mPaintingX;
     private int mPaintingY;
@@ -54,6 +55,8 @@ public class MultiFontString {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+
+        mMap = new HashMap<>(128);
         // buildSegments();
     }
 
@@ -66,7 +69,7 @@ public class MultiFontString {
             throw new IOException("Cannot load " + path);
         }
 
-        if (DO_MULTICOLOR && list.length == 5){
+        if (DO_MULTICOLOR && list.length <= 5){
             createMultiColoredFonts(assets, path, list);
         } else {
             createAllBlackFonts(assets, path, list);
@@ -134,7 +137,7 @@ public class MultiFontString {
             // copies fonts and chars and
             // represents
             MultiFontCharRow mfcRow = new MultiFontCharRow(s
-                    , mFonts, bitmapWidth, rowHeight);
+                    , mFonts, bitmapWidth, rowHeight, mMap);
             rowX = (int) mfcRow.getXOffset();
             // loop characters
             for ( MultiFontChar mfc : mfcRow.getList()){

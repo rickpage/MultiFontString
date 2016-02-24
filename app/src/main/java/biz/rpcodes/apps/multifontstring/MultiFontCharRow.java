@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 /**
  * Holds paints and list of MFCs
- *
+ * Supports using the same Map as other rows, so we dont repeat letters until we cycle all of them
  * Created by page on 2/23/16.
  */
 public class MultiFontCharRow {
@@ -27,7 +27,7 @@ public class MultiFontCharRow {
 
     // TODO: Abstract logging out of the class so non Android can use
     private void l(String s){
-        Log.v("MFC ROW",s );
+        Log.v("MFC ROW", s);
     }
     /**
      * We use a clone of the FontPaints so we can change the
@@ -40,8 +40,18 @@ public class MultiFontCharRow {
         , int rowWidth
         , int rowHeight){
 
+        this(row, fonts, rowWidth, rowHeight
+                , new HashMap<Character, Short>(128));
 
-        mMap = new HashMap<>(128);
+
+    }
+
+    public MultiFontCharRow(String row
+            , ArrayList<FontPaint> fonts
+            , int rowWidth
+            , int rowHeight
+            , HashMap<Character, Short> map) {
+        mMap = map;
 
         mList = new ArrayList<MultiFontChar>(row.length());
         mFonts = (ArrayList<FontPaint>) fonts.clone();
@@ -51,7 +61,7 @@ public class MultiFontCharRow {
         mMeasuredWidth = 0;
 
         createMFCarray(row);
-
+        // this(row, fonts, rowHeight, rowHeight);
     }
 
     private void createMFCarray(String substring) {
